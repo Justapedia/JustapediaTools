@@ -1,0 +1,4 @@
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/api/citation/route.js', LF will be replaced by CRLF the next time Git touches it
+.gitignore
+src/app/api/citation/route.js

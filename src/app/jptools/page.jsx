@@ -10,13 +10,6 @@ import {
 
 const tools = [
   {
-    name: "Edit Counter",
-    description: "Detailed edit statistics and breakdown by namespace.",
-    path: "/jptools/edit-counter",
-    icon: Users,
-    color: "bg-blue-600",
-  },
-  {
     name: "Page Info",
     description: "Deep page revision analytics: editors, edit types, prose stats, top editors, and bots.",
     path: "/jptools/page-info",
@@ -31,25 +24,11 @@ const tools = [
     color: "bg-orange-500",
   },
   {
-    name: "Top Edits",
-    description: "View the most edited pages and top contributors.",
-    path: "/jptools/top-edits",
-    icon: BarChart2,
-    color: "bg-purple-600",
-  },
-  {
     name: "Largest Pages",
     description: "Lists largest pages by wikitext byte size with filters.",
     path: "/jptools/largest-pages",
     icon: FileText,
     color: "bg-yellow-500",
-  },
-  {
-    name: "Edit Summaries",
-    description: "Analyze usage of edit summaries across the wiki.",
-    path: "/jptools/edit-summaries",
-    icon: FileText,
-    color: "bg-pink-500",
   },
   {
     name: "Simple Counter",
