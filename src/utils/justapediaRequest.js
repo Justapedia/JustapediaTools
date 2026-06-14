@@ -1,26 +1,13 @@
 import axios from "axios";
-import { SocksProxyAgent } from "socks-proxy-agent";
+import { getJustapediaConfig } from "../config/justapedia";
 
-function getSocksAgent() {
-  let proxy = process.env.SOCKS_PROXY;
-
-  if (!proxy && process.env.NODE_ENV === "development") {
-    proxy = "socks://localhost:1080";
-  }
-
-  if (!proxy) return null;
-
-  // Use socks5h to resolve DNS through proxy
-  const normalized = proxy.replace(/^socks5:\/\//, "socks5h://");
-
-  console.log("[Proxy] Creating SOCKS proxy agent with:", normalized);
-  const agent = new SocksProxyAgent(normalized);
-
-  // Optional: Force IPv4 if your environment has flaky IPv6
-  // Node's http(s) client reads this hint on sockets.
-  agent.options = { ...(agent.options || {}), family: 4 };
-
-  return agent;
+export function buildApiHeaders(extraHeaders = {}) {
+  const config = getJustapediaConfig();
+  return {
+    "User-Agent": config.userAgent,
+    Accept: "application/json",
+    ...extraHeaders,
+  };
 }
 
 function extractSetCookies(headers) {
@@ -55,25 +42,37 @@ export function mergeCookies(currentCookieHeader, setCookieArray) {
 }
 
 export async function makeRequest(config) {
-  // Always create a new agent to avoid stale connection issues
-  const agent = getSocksAgent();
-
   const axiosConfig = {
     timeout: 30000,
     validateStatus: () => true,
     maxRedirects: 0,
     ...config,
-    proxy: false, // IMPORTANT for custom agents
-    httpAgent: agent || undefined,
-    httpsAgent: agent || undefined,
+    headers: {
+      Accept: "application/json",
+      ...config.headers,
+    },
   };
 
   try {
     const res = await axios(axiosConfig);
-    return { status: res.status, data: res.data, cookies: extractSetCookies(res.headers) };
+    let data = res.data;
+    if (typeof data === "string" && data.trim().startsWith("{")) {
+      try {
+        data = JSON.parse(data);
+      } catch {
+        // Keep raw string when it is not JSON.
+      }
+    }
+
+    return {
+      status: res.status,
+      data,
+      cookies: extractSetCookies(res.headers),
+      location: res.headers?.location || null,
+    };
   } catch (err) {
     const msg = err?.message || String(err);
-    console.error(`[ProxyRequest] Failed: ${msg} | URL: ${config.url}`);
-    throw new Error(`Proxy connection failed: ${msg}`);
+    console.error(`[JustapediaRequest] Failed: ${msg} | URL: ${config.url}`);
+    throw new Error(`Justapedia API request failed: ${msg}`);
   }
 }

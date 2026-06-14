@@ -6,25 +6,3 @@ JPTools integrates directly with the Justapedia API to ensure accurate and up-to
 
 https://justapedia.org/wiki/Justapedia:Justapedia_Tools
 
-## Development Setup
-
-1. Copy `.env.example` to `.env.local`:
-   ```bash
-   cp .env.example .env.local
-   ```
-2. Edit `.env.local` to set your local SOCKS proxy (if needed):
-   ```env
-   SOCKS_PROXY=socks://localhost:1080
-   ```
-3. Install dependencies and run the development server:
-   ```bash
-   npm install
-   npm run dev
-   ```
-
-## Vercel Deployment
-
-**Important:** You **MUST** manually add the environment variable to your Vercel project settings, as `.env` files are not uploaded.
-
-- **Key:** `SOCKS_PROXY`
-- **Value:** Your actual production SOCKS5 proxy URL (e.g., `socks5://user:pass@host:port`).

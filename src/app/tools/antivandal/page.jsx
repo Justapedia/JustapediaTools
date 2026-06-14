@@ -2,16 +2,14 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
-import { 
-  ShieldAlert, RefreshCw, Play, Pause, 
-  RotateCcw, Check, X, AlertTriangle, 
+import {
+  ShieldAlert, RefreshCw, Play, Pause,
+  RotateCcw, Check, X, AlertTriangle,
   ExternalLink, User, Clock, FileText,
-  Settings, Zap, Lock, Trash2
+  Settings, Zap, Trash2,
 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
 
 export default function AntiVandal() {
-  const { user, checkSession } = useAuth(); // Use global user
   const [csrfToken, setCsrfToken] = useState("");
 
   const [isActive, setIsActive] = useState(false);
@@ -64,12 +62,9 @@ export default function AntiVandal() {
     }
   }, []);
 
-  // On mount, if user exists, fetch CSRF token
   useEffect(() => {
-    if (user) {
-        fetchCsrfToken();
-    }
-  }, [user, fetchCsrfToken]);
+    fetchCsrfToken();
+  }, [fetchCsrfToken]);
 
   const analyzeEdit = useCallback((edit) => {
     let score = 0;
@@ -168,9 +163,6 @@ export default function AntiVandal() {
     }
   }, [currentEdit]);
 
-  // If not logged in, the Layout will block access, but double check here
-  if (!user) return null;
-
   const fetchDiff = async (edit) => {
     setLoadingDiff(true);
     try {
@@ -204,13 +196,13 @@ export default function AntiVandal() {
       if (!activeToken) {
         activeToken = await fetchCsrfToken();
         if (!activeToken) {
-          alert("Session token missing. Please re-login.");
+          alert("Session token missing. Write actions require appropriate Justapedia rights.");
           return;
         }
       }
 
       // Check for rollback permission
-      const hasRollback = user?.rights?.includes("rollback") || user?.groups?.includes("sysop");
+      const hasRollback = false;
 
       const performRollback = async (tokenToUse) => {
         const params = new URLSearchParams();
@@ -316,7 +308,7 @@ export default function AntiVandal() {
                          console.warn("Undo fallback failed:", undoRes.data.error);
                     } else {
                         // Success!
-                        console.log(`[User: ${user?.name}] Undid edit ${currentEdit.revid} (fallback from rollback)`);
+                        console.log(`Undid edit ${currentEdit.revid} (fallback from rollback)`);
                         setStats(s => ({ ...s, reverted: s.reverted + 1 }));
                         setQueue(q => q.filter(e => e.rcid !== currentEdit.rcid));
                         setCurrentEdit(null);
@@ -339,7 +331,7 @@ export default function AntiVandal() {
           throw new Error(res.data.error.info || "Rollback/Undo error");
         }
 
-        console.log(`[User: ${user?.name}] Reverted edit ${currentEdit.revid} by ${currentEdit.user}`);
+        console.log(`Reverted edit ${currentEdit.revid} by ${currentEdit.user}`);
         setStats(s => ({ ...s, reverted: s.reverted + 1 }));
       } catch (err) {
         console.error("Revert failed", err);
@@ -380,7 +372,7 @@ export default function AntiVandal() {
             if (res.data?.error) {
                 throw new Error(res.data.error.info || "Delete error");
             }
-             console.log(`[User: ${user?.name}] Deleted page ${currentEdit.title}`);
+             console.log(`Deleted page ${currentEdit.title}`);
              setStats(s => ({ ...s, reverted: s.reverted + 1 })); // Count as handled
         } catch(err) {
             console.error("Delete failed", err);
@@ -412,7 +404,7 @@ export default function AntiVandal() {
             
             <div className="flex items-center gap-4">
               <div className="text-right hidden sm:block">
-                <div className="text-sm font-medium text-white">{user.name}</div>
+                <div className="text-sm font-medium text-white">Justapedia API</div>
                 <div className="text-xs text-zinc-500">Connected to Justapedia</div>
               </div>
               <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700">
@@ -477,7 +469,7 @@ export default function AntiVandal() {
               <ShieldAlert className="w-5 h-5 text-red-600" />
               AntiVandal
             </h2>
-            <div className="text-xs text-zinc-500 ml-7">Logged in as {user?.name}</div>
+            <div className="text-xs text-zinc-500 ml-7">Justapedia API</div>
           </div>
           <div className="flex gap-2">
             <button 

@@ -1,9 +1,7 @@
 import axios from 'axios';
-import { saveEdit as saveEditBase, checkBotStatus as checkBotStatusBase, loginBot as loginBotBase, fetchArticle } from './botLogic';
+import { saveEdit as saveEditBase, checkBotStatus as checkBotStatusBase, fetchArticle } from './botLogic';
 
-// Re-export common bot functions
 export const checkBotStatus = checkBotStatusBase;
-export const loginBot = loginBotBase;
 export const saveEdit = saveEditBase;
 
 const API_ENDPOINT = "/api/justapedia";

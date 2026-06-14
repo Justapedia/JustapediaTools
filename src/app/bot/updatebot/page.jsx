@@ -1,24 +1,16 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { 
-  Play, Square, RefreshCw, AlertTriangle, CheckCircle, 
-  FileText, Lock
+import {
+  Play, Square, RefreshCw, AlertTriangle, CheckCircle,
+  FileText,
 } from "lucide-react";
 import axios from "axios";
-import { fetchRandomInfoboxArticle, processInfoboxSync, saveEdit, checkBotStatus, loginBot } from "@/utils/updateBotLogic";
+import { fetchRandomInfoboxArticle, processInfoboxSync, saveEdit } from "@/utils/updateBotLogic";
 
 export default function UpdateBotPage() {
-  const { user, loading } = useAuth();
   const [isRunning, setIsRunning] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  
-  // Bot Auth State
-  const [botAuth, setBotAuth] = useState({ loggedIn: false, username: "" });
-  const [botLoginData, setBotLoginData] = useState({ username: "Sourav bot", password: "" });
-  const [showBotLogin, setShowBotLogin] = useState(false);
-  
   // Bot Options
   const [autoSave, setAutoSave] = useState(false); 
   const [processAll, setProcessAll] = useState(false); 
@@ -70,7 +62,7 @@ export default function UpdateBotPage() {
           params: {
             action: "query",
             list: "users",
-            ususers: botAuth.username || "Sourav bot", // Default to Sourav bot if not logged in
+            ususers: "Sourav bot",
             usprop: "editcount|registration|groups",
             format: "json"
           }
@@ -86,28 +78,7 @@ export default function UpdateBotPage() {
       } catch (e) {
         console.error("Error fetching bot stats", e);
       }
-  }, [botAuth.username]);
-
-  const checkAuth = async () => {
-      const status = await checkBotStatus();
-      setBotAuth(status);
-  };
-
-  const handleBotLogin = async (e) => {
-      e.preventDefault();
-      try {
-          const res = await loginBot(botLoginData.username, botLoginData.password);
-          if (res.success) {
-              setBotAuth({ loggedIn: true, username: res.user });
-              setShowBotLogin(false);
-              addLog("Bot successfully authenticated", "System", "success");
-          } else {
-              addLog(`Bot login failed: ${res.error}`, "System", "error");
-          }
-      } catch (error) {
-          addLog(`Bot login error: ${error.message}`, "System", "error");
-      }
-  };
+  }, []);
 
   useEffect(() => {
     setTimeout(() => fetchStats(), 0);
@@ -118,40 +89,6 @@ export default function UpdateBotPage() {
     return () => clearInterval(interval);
   }, [fetchStats]);
 
-  if (loading) {
-    return (
-        <div className="min-h-screen bg-black flex items-center justify-center">
-            <div className="text-zinc-500 flex items-center gap-2">
-                <RefreshCw className="w-4 h-4 animate-spin" /> Checking permissions...
-            </div>
-        </div>
-    );
-  }
-
-  const hasAdminRights = user?.groups?.some(g => ["sysop", "bureaucrat", "steward"].includes(g));
-  const hasBotRights = user?.groups?.includes("bot") || hasAdminRights;
-
-  // Access Control
-  if (!hasBotRights) {
-      return (
-          <div className="min-h-screen bg-black flex items-center justify-center p-4 font-sans">
-              <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center shadow-xl">
-                  <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <Lock className="w-10 h-10 text-red-500" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-white mb-2">Access Restricted</h2>
-                  <p className="text-zinc-400 mb-8">
-                      This area is restricted to Bot Operators and Administrators. Your account does not have the required permissions.
-                  </p>
-              </div>
-          </div>
-      );
-  }
-  
-
-
-  // --- Bot Logic Loop ---
-  
   const runBotCycle = async () => {
     if (stopSignal.current) {
         setIsRunning(false);
@@ -160,7 +97,7 @@ export default function UpdateBotPage() {
     }
 
     setIsProcessing(true);
-    addLog("Scanning for articles with Infoboxes...", botAuth.username || "Bot", "info");
+    addLog("Scanning for articles with Infoboxes...", "Bot", "info");
 
     try {
         // 1. Fetch
@@ -243,31 +180,22 @@ export default function UpdateBotPage() {
   };
 
   const handleStart = () => {
-    if (!botAuth.loggedIn) {
-        addLog("Cannot start: Bot not authenticated", "System", "error");
-        setShowBotLogin(true);
-        return;
-    }
     stopSignal.current = false;
     setIsRunning(true);
-    addLog("Bot Started", user.name, "success", "Controller initiated start command");
+    addLog("Bot Started", "Operator", "success", "Start command initiated");
     runBotCycle();
   };
 
   const handleStop = () => {
-    if (!hasAdminRights && user.name !== botAuth.username) {
-        alert("Permission Denied: Only Administrators can stop the bot.");
-        return;
-    }
     stopSignal.current = true;
     setIsRunning(false);
-    addLog("Stopping bot...", user.name, "warning", "Stop command initiated");
+    addLog("Stopping bot...", "Operator", "warning", "Stop command initiated");
   };
 
   const handleApproveEdit = async () => {
     if (!pendingEdit) return;
-    
-    addLog(`Approving edit for ${pendingEdit.title}...`, user.name, "success");
+
+    addLog(`Approving edit for ${pendingEdit.title}...`, "Operator", "success");
     const saveRes = await saveEdit(pendingEdit.title, pendingEdit.content, pendingEdit.summary, true);
     
     if (saveRes.success) {
@@ -288,7 +216,7 @@ export default function UpdateBotPage() {
   };
 
   const handleRejectEdit = () => {
-    addLog(`Skipped: ${pendingEdit.title}`, user.name, "warning");
+    addLog(`Skipped: ${pendingEdit.title}`, "Operator", "warning");
     setPendingEdit(null);
     
     if (processAll && !stopSignal.current) {
@@ -315,80 +243,10 @@ export default function UpdateBotPage() {
             </span>
           </div>
           <div className="text-zinc-400 max-w-2xl text-sm space-y-4">
-            {/* Bot Auth Status */}
-            <div className="flex items-center gap-3">
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium ${
-                    botAuth.loggedIn 
-                        ? "bg-blue-500/10 text-blue-400 border-blue-500/20" 
-                        : "bg-zinc-800 text-zinc-400 border-zinc-700"
-                }`}>
-                    {botAuth.loggedIn ? (
-                        <>
-                            <CheckCircle className="w-3 h-3" />
-                            Authenticated as {botAuth.username}
-                        </>
-                    ) : (
-                        <>
-                            <AlertTriangle className="w-3 h-3" />
-                            Not Authenticated
-                        </>
-                    )}
-                </div>
-                {!botAuth.loggedIn && (
-                    <button 
-                        onClick={() => setShowBotLogin(!showBotLogin)}
-                        className="text-xs text-blue-400 hover:text-blue-300 hover:underline"
-                    >
-                        Connect Bot Account
-                    </button>
-                )}
-            </div>
-
-            {/* Bot Login Form */}
-            {showBotLogin && !botAuth.loggedIn && (
-                <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl max-w-md animate-fade-in">
-                    <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-                        <Lock className="w-4 h-4 text-blue-400" />
-                        Connect Bot Account
-                    </h3>
-                    <form onSubmit={handleBotLogin} className="space-y-3">
-                        <div>
-                            <label className="text-xs text-zinc-500 font-bold ml-1">BOT USERNAME</label>
-                            <input 
-                                type="text" 
-                                value={botLoginData.username}
-                                onChange={e => setBotLoginData({...botLoginData, username: e.target.value})}
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs text-zinc-500 font-bold ml-1">BOT PASSWORD</label>
-                            <input 
-                                type="password" 
-                                value={botLoginData.password}
-                                onChange={e => setBotLoginData({...botLoginData, password: e.target.value})}
-                                placeholder="BotPassword..."
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500 outline-none"
-                            />
-                        </div>
-                        <div className="flex justify-end gap-2">
-                            <button 
-                                type="button"
-                                onClick={() => setShowBotLogin(false)}
-                                className="px-3 py-1.5 text-xs text-zinc-400 hover:text-white"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                type="submit"
-                                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg"
-                            >
-                                Connect
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
+            <p className="leading-relaxed">
+              Syncs infobox data from English Wikipedia into Justapedia articles. Configure
+              categories, review proposed changes, and run in auto-save or manual review mode.
+            </p>
           </div>
         </div>
 

@@ -32,11 +32,6 @@ export async function checkBotStatus() {
   }
 }
 
-export async function loginBot(username, password) {
-    const res = await axios.post("/api/bot/login", { username, password });
-    return res.data;
-}
-
 // Helper to sleep
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
