@@ -7,7 +7,11 @@ import { Clock, Search, ArrowUpRight } from "lucide-react";
 
 export default function SimpleCounter() {
   return (
-    <Suspense fallback={<div className="text-center py-20 text-zinc-500">Loading tool...</div>}>
+    <Suspense
+      fallback={
+        <div className="text-center py-20 text-zinc-500">Loading tool...</div>
+      }
+    >
       <SimpleCounterContent />
     </Suspense>
   );
@@ -23,48 +27,53 @@ function SimpleCounterContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const fetchCount = useCallback(async (overrideUser) => {
-    const user = (typeof overrideUser === "string" ? overrideUser : username).trim();
-    if (!user) return;
+  const fetchCount = useCallback(
+    async (overrideUser) => {
+      const user = (
+        typeof overrideUser === "string" ? overrideUser : username
+      ).trim();
+      if (!user) return;
 
-    // Update URL
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("username", user);
-    
-    const newSearchString = params.toString();
-    if (newSearchString !== searchParams.toString()) {
-      router.replace(`${pathname}?${newSearchString}`);
-    }
+      // Update URL
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("username", user);
 
-    setLoading(true);
-    setError("");
-    setEditCount(null);
-
-    try {
-      const response = await axios.get("/api/justapedia", {
-        params: {
-          action: "query",
-          list: "users",
-          ususers: user,
-          usprop: "editcount",
-          format: "json",
-          // origin: "*",
-        },
-      });
-
-      const userData = response.data?.query?.users?.[0];
-
-      if (!userData || userData.missing !== undefined) {
-        setError("User not found.");
-      } else {
-        setEditCount(userData.editcount);
+      const newSearchString = params.toString();
+      if (newSearchString !== searchParams.toString()) {
+        router.replace(`${pathname}?${newSearchString}`);
       }
-    } catch (err) {
-      setError("Error fetching data.");
-    } finally {
-      setLoading(false);
-    }
-  }, [username, searchParams, pathname, router]);
+
+      setLoading(true);
+      setError("");
+      setEditCount(null);
+
+      try {
+        const response = await axios.get("/api/justapedia", {
+          params: {
+            action: "query",
+            list: "users",
+            ususers: user,
+            usprop: "editcount",
+            format: "json",
+            // origin: "*",
+          },
+        });
+
+        const userData = response.data?.query?.users?.[0];
+
+        if (!userData || userData.missing !== undefined) {
+          setError("User not found.");
+        } else {
+          setEditCount(userData.editcount);
+        }
+      } catch (err) {
+        setError("Error fetching data.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [username, searchParams, pathname, router],
+  );
 
   useEffect(() => {
     const u = searchParams.get("username");
@@ -72,7 +81,11 @@ function SimpleCounterContent() {
       setUsername(u);
       fetchCount(u);
     }
-  }, [searchParams, fetchCount]);
+    // Only run when search params change. Excluding `fetchCount` avoids
+    // re-running this effect when `username` (a dependency of `fetchCount`)
+    // changes, which would overwrite user input with the URL value.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   return (
     <div className="max-w-xl mx-auto mt-20 text-center space-y-8">
@@ -80,9 +93,11 @@ function SimpleCounterContent() {
         <h1 className="text-4xl font-bold text-zinc-900 dark:text-white flex justify-center items-center gap-3">
           <Clock className="w-10 h-10 text-gray-500" /> Simple Counter
         </h1>
-        <p className="text-zinc-500">Fast, lightweight edit counter for Justapedia.</p>
+        <p className="text-zinc-500">
+          Fast, lightweight edit counter for Justapedia.
+        </p>
       </div>
-      
+
       <div className="relative">
         <input
           type="text"
@@ -93,7 +108,7 @@ function SimpleCounterContent() {
           onKeyDown={(e) => e.key === "Enter" && fetchCount()}
           autoFocus
         />
-        <button 
+        <button
           onClick={() => fetchCount()}
           className="absolute right-3 top-3 p-2 bg-zinc-100 dark:bg-zinc-800 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700"
         >
@@ -101,13 +116,17 @@ function SimpleCounterContent() {
         </button>
       </div>
 
-      {loading && <div className="text-zinc-400 animate-pulse">Fetching...</div>}
+      {loading && (
+        <div className="text-zinc-400 animate-pulse">Fetching...</div>
+      )}
 
       {error && <div className="text-red-500">{error}</div>}
 
       {editCount !== null && (
         <div className="bg-zinc-100 dark:bg-zinc-800 p-8 rounded-2xl inline-block min-w-[200px]">
-          <span className="block text-sm text-zinc-500 uppercase tracking-wider mb-1">Edit Count</span>
+          <span className="block text-sm text-zinc-500 uppercase tracking-wider mb-1">
+            Edit Count
+          </span>
           <span className="text-5xl font-black text-blue-600 dark:text-blue-400">
             {editCount.toLocaleString()}
           </span>

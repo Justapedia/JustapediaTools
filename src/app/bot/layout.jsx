@@ -14,7 +14,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const VALID_USERNAME = "sourav";
-const VALID_PASSWORD = "";
+const VALID_PASSWORD = "8636521212";
 const STORAGE_KEY = "bot-section-authenticated";
 
 export default function BotLayout({ children }) {
